@@ -1,232 +1,158 @@
-# AWS CDN Infrastructure with Terraform
+# 🚀 AWS CDN Infrastructure with Terraform
 
-이 프로젝트는 AWS S3, CloudFront, ACM, Route53를 사용하여 CDN 인프라를 구성하는 Terraform 코드입니다.
+AWS CloudFront + S3를 사용한 CDN 인프라를 Terraform으로 구축하는 프로젝트입니다.
+폰트, 이미지 등의 정적 자산을 전 세계적으로 빠르게 배포할 수 있습니다.
 
-## 🚀 주요 기능
+## ✨ 구성 요소
 
-- **S3 버킷**: 폰트 및 이미지 파일 저장
-- **CloudFront**: CDN 배포로 전 세계 캐싱
-- **ACM**: HTTPS를 위한 SSL/TLS 인증서
+- **S3**: 정적 자산 저장소
+- **CloudFront**: 글로벌 CDN 배포
+- **ACM**: HTTPS SSL/TLS 인증서
 - **Route53**: 커스텀 도메인 연결
 
-## 📋 사전 요구사항
+## 🎯 결과물
 
-- Terraform 설치
-- AWS CLI 설치 및 SSO 설정
-- Route53 호스팅 영역 (vibelist.click)
-
-## 🔧 AWS Profile 변수 사용 방법
-
-### 1. 기본 설정
-
-`main.tf`에서 다음과 같이 변수를 정의했습니다:
-
-```hcl
-variable "aws_profile" {
-  description = "AWS Profile to use for authentication"
-  type        = string
-  # default 값을 제거하면 실행시 입력받게 됩니다
-}
-
-variable "aws_region" {
-  description = "AWS region for resources"
-  type        = string
-  default     = "ap-northeast-2"
-}
+배포 완료 후 다음과 같은 CDN URL을 얻을 수 있습니다:
+```
+https://cdn.your-domain.com/your-assets.woff
 ```
 
-### 2. 사용 방법
+## 🚀 빠른 시작
 
-#### 방법 1: terraform.tfvars 파일 사용 (권장)
+### 1️⃣ 사전 준비
 
-프로젝트 루트에 `terraform.tfvars` 파일을 생성:
-
-```hcl
-aws_profile = "boot-polcaneli"
-aws_region  = "ap-northeast-2"
-```
-
-실행:
 ```bash
+# 필수 도구 설치
+brew install terraform awscli  # macOS
+# 또는
+apt install terraform awscli   # Ubuntu
+
+# AWS 인증 설정
+aws configure  # 또는 aws sso configure
+```
+
+### 2️⃣ 변수 설정
+
+```bash
+# 예제 파일을 복사하여 본인의 설정으로 변경
+cp terraform.tfvars.example terraform.tfvars
+
+# terraform.tfvars 파일을 편집하여 다음 값들을 설정:
+# - aws_profile: AWS 프로필 이름
+# - host_domain: 본인의 도메인 (예: example.com)
+# - cdn_domain: CDN 서브도메인 (예: cdn.example.com)  
+# - s3_bucket_name: 고유한 S3 버킷 이름
+```
+
+📝 **상세한 변수 설정 가이드는 `terraform.tfvars.example` 파일을 참고하세요.**
+
+### 3️⃣ 배포 실행
+
+```bash
+# 초기화
+terraform init
+
+# 배포 계획 확인
 terraform plan
+
+# 배포 실행
 terraform apply
 ```
 
-#### 방법 2: 명령행 인자로 전달
+### 4️⃣ 파일 업로드 및 테스트
 
 ```bash
-terraform plan -var="aws_profile=my-profile"
-terraform apply -var="aws_profile=my-profile" -var="aws_region=us-west-2"
+# S3에 파일 업로드
+aws s3 sync ./assets s3://your-bucket-name/
+
+# CDN URL로 접근 테스트
+curl -I https://cdn.your-domain.com/test-file.png
 ```
 
-#### 방법 3: 환경 변수 사용
+## 📋 주요 명령어
 
-```bash
-export TF_VAR_aws_profile="my-profile"
-export TF_VAR_aws_region="us-west-2"
-terraform plan
-terraform apply
-```
+| 작업 | 명령어 |
+|------|--------|
+| **S3 파일 동기화** | `aws s3 sync ./assets s3://bucket-name/` |
+| **CDN 캐시 무효화** | `aws cloudfront create-invalidation --distribution-id DIST_ID --paths "/*"` |
+| **배포 정보 확인** | `terraform output` |
+| **인프라 삭제** | `terraform destroy` |
 
-#### 방법 4: 대화형 입력
+## 🔧 사용 예시
 
-변수에 `default` 값이 없으면 실행시 직접 입력받습니다:
-
-```bash
-terraform plan
-# 실행시 다음과 같이 입력을 요청합니다:
-# var.aws_profile
-#   AWS Profile to use for authentication
-#   Enter a value: boot-polcaneli
-```
-
-#### 방법 5: 프로필별 tfvars 파일
-
-다양한 환경을 위해 여러 tfvars 파일을 생성할 수 있습니다:
-
-```bash
-# dev.tfvars
-aws_profile = "dev-profile"
-aws_region  = "ap-northeast-2"
-
-# prod.tfvars
-aws_profile = "prod-profile"
-aws_region  = "ap-northeast-2"
-```
-
-사용:
-```bash
-terraform plan -var-file="dev.tfvars"
-terraform apply -var-file="prod.tfvars"
-```
-
-## 🔐 AWS SSO 인증
-
-### 1. AWS SSO 로그인
-
-```bash
-aws sso login --profile boot-polcaneli
-```
-
-### 2. 환경 변수 설정 (선택사항)
-
-매번 `--profile` 옵션을 사용하지 않으려면:
-
-```bash
-# 현재 세션용
-export AWS_PROFILE=boot-polcaneli
-
-# 영구적으로 설정 (zsh 사용자)
-echo 'export AWS_PROFILE=boot-polcaneli' >> ~/.zshrc
-source ~/.zshrc
-```
-
-## 📂 S3 파일 업로드
-
-### 현재 폴더의 모든 파일 업로드
-
-```bash
-# 모든 파일 동기화
-aws s3 sync . s3://vibelist-cdn-assets/
-
-# 특정 폴더 구조로 업로드
-aws s3 sync . s3://vibelist-cdn-assets/fonts/
-
-# 특정 파일 형식만 업로드
-aws s3 sync . s3://vibelist-cdn-assets/fonts/ --include "*.woff*" --include "*.ttf"
-
-# 제외 파일 설정
-aws s3 sync . s3://vibelist-cdn-assets/ --exclude "*.tf" --exclude "*.tfstate*"
-```
-
-### 재귀적 복사
-
-```bash
-aws s3 cp . s3://vibelist-cdn-assets/ --recursive
-```
-
-## 🌐 배포 후 확인
-
-### 출력 확인
-
-```bash
-terraform output
-```
-
-결과:
-```
-assets_cdn_url_https = "https://cdn.vibelist.click"
-cloudfront_domain_name = "dan47lq6a73h9.cloudfront.net"
-cloudfront_id = "ENXMZDWGXQNOY"
-s3_bucket_name = "vibelist-cdn-assets"
-```
-
-### CDN 사용 예시
-
+### CSS에서 폰트 사용
 ```css
 @font-face {
-  font-family: 'Pretendard';
-  src: url('https://cdn.vibelist.click/fonts/Pretendard-Black.subset.woff') format('woff');
+  font-family: 'CustomFont';
+  src: url('https://cdn.your-domain.com/fonts/font.woff2') format('woff2');
 }
 ```
 
-### CloudFront 캐시 무효화
-
-```bash
-aws cloudfront create-invalidation --distribution-id ENXMZDWGXQNOY --paths "/*"
+### HTML에서 이미지 사용
+```html
+<img src="https://cdn.your-domain.com/images/logo.png" alt="Logo">
 ```
 
-## 🔄 인프라 관리
+## 💰 예상 비용
 
-### 변경사항 미리보기
+| 서비스 | 비용 | 무료 한도 |
+|--------|------|----------|
+| **CloudFront** | 데이터 전송량 기준 | 첫 1TB 무료 |
+| **S3** | 저장 용량 + 요청 수 | 첫 5GB 무료 |
+| **Route53** | 호스팅 영역 월 $0.50 | - |
+| **ACM** | SSL 인증서 무료 | 무료 |
 
-```bash
-terraform plan
+소규모 프로젝트의 경우 대부분 **월 $1 이하**로 운영 가능합니다.
+
+## 📁 프로젝트 구조
+
+```
+aws-cdn-tr/
+├── main.tf                    # 메인 Terraform 설정
+├── terraform.tfvars.example   # 변수 설정 예제 (📝 상세 가이드)
+├── terraform.tfvars          # 실제 변수 설정 (Git 제외)
+├── .gitignore                # Git 제외 파일 목록
+└── README.md                 # 이 파일
 ```
 
-### 변경사항 적용
+## 🛡️ 보안 특징
 
+- ✅ S3 버킷 완전 비공개 (CloudFront OAI를 통해서만 접근)
+- ✅ HTTPS 강제 적용 (HTTP 요청 자동 리디렉션)  
+- ✅ 최신 TLS 1.2+ 프로토콜 사용
+- ✅ 민감한 정보 Git 추적 제외
+
+## 🔍 문제 해결
+
+### ❌ AWS 인증 오류
 ```bash
-terraform apply
+aws sso login --profile your-profile-name
+# 또는
+aws configure
 ```
 
-### 리소스 삭제
-
+### ❌ Terraform 초기화 실패
 ```bash
-terraform destroy
+rm -rf .terraform*
+terraform init
 ```
 
-## 🛡️ 보안 고려사항
-
-1. **S3 버킷**: private 액세스, CloudFront OAI를 통한 접근만 허용
-2. **SSL/TLS**: ACM 인증서로 HTTPS 강제
-3. **CloudFront**: 최신 TLS 프로토콜 (TLSv1.2_2019) 사용
-4. **Route53**: DNS 레코드 보안 설정
-
-## 📝 주의사항
-
+### ❌ S3 버킷 이름 충돌
 - S3 버킷 이름은 전 세계적으로 고유해야 합니다
-- CloudFront 배포는 생성/수정에 5-10분 소요됩니다
-- ACM 인증서는 us-east-1 리전에서만 CloudFront에 사용 가능합니다
-- Route53 호스팅 영역이 미리 생성되어 있어야 합니다
+- `terraform.tfvars`에서 `s3_bucket_name`을 다른 이름으로 변경하세요
 
-## 🆘 문제 해결
+### ❌ 도메인 연결 실패
+- Route53에 해당 도메인의 호스팅 영역이 생성되어 있는지 확인
+- 도메인 네임서버가 AWS Route53을 가리키고 있는지 확인
 
-### SSO 로그인 실패
-```bash
-aws sso login --profile boot-polcaneli
-```
+## 🤝 기여하기
 
-### S3 ACL 오류
-- 최신 AWS S3는 ACL을 기본적으로 비활성화합니다
-- 코드에서 `ownership_controls`를 사용하여 해결
-
-### Route53 레코드 충돌
-- `allow_overwrite = true` 옵션 사용
-- 기존 레코드가 있는 경우 자동 덮어쓰기
+1. Fork this repository
+2. Create a feature branch
+3. Commit your changes  
+4. Push to the branch
+5. Create a Pull Request
 
 ---
 
-## 📞 연락처
-
-문의사항이나 개선 제안이 있으시면 언제든지 연락주세요! 
+⭐ **도움이 되었다면 스타를 눌러주세요!** 
