@@ -1,0 +1,59 @@
+# Terraform 관련 파일들
+*.tfstate
+*.tfstate.*
+*.tfstate.backup
+.terraform/
+*.tfplan
+*.tfplan.*
+
+# 민감한 정보가 포함될 수 있는 파일들
+terraform.tfvars
+*.auto.tfvars
+*.auto.tfvars.json
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json
+
+# IDE 설정 파일들
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# macOS 관련
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Windows 관련
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# Linux 관련
+*~
+
+# 로그 파일들
+*.log
+
+# 임시 파일들
+.tmp/
+tmp/
+
+# AWS CLI 관련
+.aws/
+
+# 환경 변수 파일들
+.env
+.env.local
+.env.*.local
+
+# 압축 파일들
+*.zip
+*.tar.gz
+*.rar
+
+# 백업 파일들
+*.bak 
